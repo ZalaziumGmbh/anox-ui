@@ -471,7 +471,6 @@ async def generate_chat_completion(
             return response
     except Exception as e:
         log.exception(e)
-<<<<<<< HEAD:backend/open_webui/apps/openai/main.py
         error_detail = "Open WebUI: Server Connection Error"
         if isinstance(response, dict):
             if "error" in response:
@@ -479,17 +478,6 @@ async def generate_chat_completion(
         elif isinstance(response, str):
             error_detail = response
 
-=======
-        error_detail = "Anox Dashboard: Server Connection Error"
-        if r is not None:
-            try:
-                res = await r.json()
-                print(res)
-                if "error" in res:
-                    error_detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
-            except Exception:
-                error_detail = f"External: {e}"
->>>>>>> updated for ui:backend/apps/openai/main.py
         raise HTTPException(status_code=r.status if r else 500, detail=error_detail)
     finally:
         if not streaming and session:

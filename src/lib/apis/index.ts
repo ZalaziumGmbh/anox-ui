@@ -1,4 +1,4 @@
-import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
+import { WEBUI_BASE_URL } from '$lib/constants';
 
 export const getModels = async (token: string = '') => {
 	let error = null;
@@ -69,7 +69,7 @@ type ChatCompletedForm = {
 	model: string;
 	messages: string[];
 	chat_id: string;
-	session_id: string;
+	client_id: string;
 };
 
 export const chatCompleted = async (token: string, body: ChatCompletedForm) => {

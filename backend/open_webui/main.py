@@ -33,7 +33,11 @@ from open_webui.apps.openai.main import (
 from open_webui.apps.openai.main import get_all_models as get_openai_models
 from open_webui.apps.rag.main import app as rag_app
 from open_webui.apps.rag.utils import get_rag_context, rag_template
-from open_webui.apps.socket.main import app as socket_app, periodic_usage_pool_cleanup
+from open_webui.apps.socket.main import (
+    app as socket_app,
+    periodic_usage_pool_cleanup,
+    shutdown,
+)
 from open_webui.apps.socket.main import get_event_call, get_event_emitter
 from open_webui.apps.webui.internal.db import Session
 from open_webui.apps.webui.main import app as webui_app
@@ -223,6 +227,11 @@ app.state.config.TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE = (
 )
 
 app.state.MODELS = {}
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    await shutdown()
 
 
 ##################################
@@ -546,7 +555,7 @@ class ChatCompletionMiddleware(BaseHTTPMiddleware):
         metadata = {
             "chat_id": body.pop("chat_id", None),
             "message_id": body.pop("id", None),
-            "session_id": body.pop("session_id", None),
+            "client_id": body.pop("client_id", None),
             "tool_ids": body.get("tool_ids", None),
             "files": body.get("files", None),
         }
@@ -1143,7 +1152,7 @@ async def chat_completed(form_data: dict, user=Depends(get_verified_user)):
         {
             "chat_id": data["chat_id"],
             "message_id": data["id"],
-            "session_id": data["session_id"],
+            "client_id": data["client_id"],
         }
     )
 
@@ -1151,7 +1160,7 @@ async def chat_completed(form_data: dict, user=Depends(get_verified_user)):
         {
             "chat_id": data["chat_id"],
             "message_id": data["id"],
-            "session_id": data["session_id"],
+            "client_id": data["client_id"],
         }
     )
 
@@ -1279,14 +1288,14 @@ async def chat_action(action_id: str, form_data: dict, user=Depends(get_verified
         {
             "chat_id": data["chat_id"],
             "message_id": data["id"],
-            "session_id": data["session_id"],
+            "client_id": data["client_id"],
         }
     )
     __event_call__ = get_event_call(
         {
             "chat_id": data["chat_id"],
             "message_id": data["id"],
-            "session_id": data["session_id"],
+            "client_id": data["client_id"],
         }
     )
 

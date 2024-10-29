@@ -32,57 +32,12 @@
 	import { WEBUI_BASE_URL, WEBUI_HOSTNAME } from '$lib/constants';
 	import i18n, { initI18n, getLanguages } from '$lib/i18n';
 	import { bestMatchingLanguage } from '$lib/utils';
+	import { initSocket } from '$lib/stores/socket';
 
 	setContext('i18n', i18n);
 
 	let loaded = false;
 	const BREAKPOINT = 768;
-
-	const setupSocket = () => {
-		const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
-			reconnection: true,
-			reconnectionDelay: 1000,
-			reconnectionDelayMax: 5000,
-			randomizationFactor: 0.5,
-			path: '/ws/socket.io',
-			auth: { token: localStorage.token }
-		});
-
-		socket.set(_socket);
-
-		_socket.on('connect_error', (err) => {
-			console.log('connect_error', err);
-		});
-
-		_socket.on('connect', () => {
-			console.log('connected', _socket.id);
-		});
-
-		_socket.on('reconnect_attempt', (attempt) => {
-			console.log('reconnect_attempt', attempt);
-		});
-
-		_socket.on('reconnect_failed', () => {
-			console.log('reconnect_failed');
-		});
-
-		_socket.on('disconnect', (reason, details) => {
-			console.log(`Socket ${_socket.id} disconnected due to ${reason}`);
-			if (details) {
-				console.log('Additional details:', details);
-			}
-		});
-
-		_socket.on('user-count', (data) => {
-			console.log('user-count', data);
-			activeUserCount.set(data.count);
-		});
-
-		_socket.on('usage', (data) => {
-			console.log('usage', data);
-			USAGE_POOL.set(data['models']);
-		});
-	};
 
 	onMount(async () => {
 		theme.set(localStorage.theme);
@@ -126,8 +81,7 @@
 			await WEBUI_NAME.set(backendConfig.name);
 
 			if ($config) {
-				setupSocket();
-
+				
 				if (localStorage.token) {
 					// Get Session User Info
 					const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
@@ -139,6 +93,13 @@
 						// Save Session User to Store
 						await user.set(sessionUser);
 						await config.set(await getBackendConfig());
+						
+						const socketInstance = initSocket(localStorage.token, sessionUser.id);
+						// Emit user-join event after connection
+						socketInstance.on('connect', () => {
+							socketInstance.emit('user-join', { auth: { token: localStorage.token } });
+						});
+
 					} else {
 						// Redirect Invalid Session User to /auth Page
 						localStorage.removeItem('token');

@@ -9,6 +9,7 @@
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 	import { page } from '$app/stores';
 	import { getBackendConfig } from '$lib/apis';
+	import { initSocket } from '$lib/stores/socket';
 
 	const i18n = getContext('i18n');
 
@@ -27,7 +28,12 @@
 				localStorage.token = sessionUser.token;
 			}
 
-			$socket.emit('user-join', { auth: { token: sessionUser.token } });
+			const socketInstance = initSocket(sessionUser.token, sessionUser.id);
+			// Wait for the socket to connect before emitting the user-join event
+			socketInstance.on('connect', () => {
+				socketInstance.emit('user-join', { auth: { token: sessionUser.token } });
+			});
+			
 			await user.set(sessionUser);
 			await config.set(await getBackendConfig());
 			goto('/');

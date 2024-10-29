@@ -289,7 +289,7 @@ async def generate_function_chat_completion(form_data, user):
     __task__ = None
 
     if metadata:
-        if all(k in metadata for k in ("session_id", "chat_id", "message_id")):
+        if all(k in metadata for k in ("client_id", "chat_id", "message_id")):
             __event_emitter__ = get_event_emitter(metadata)
             __event_call__ = get_event_call(metadata)
         __task__ = metadata.get("task", None)
